@@ -95,9 +95,9 @@ pip install -r requirements.txt
 
 To train the multi-modal fusion model on preprocessed data, run:
 
-```bash
-python train.py
-```
+``bash
+run task2itsolera.ipynb 
+``
 
 ---
 
