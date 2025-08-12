@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geological Analysis Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            padding: 30px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px 0;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #5a6fd8, #6a4190);
+            transform: translateY(-2px);
+        }
+        .search-section {
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="text-center mb-4">
+            <h1 class="display-4 text-primary">
+                <i class="fas fa-mountain"></i> Geological Analysis Dashboard
+            </h1>
+            <p class="lead text-muted">Advanced geotechnical data analysis and visualization platform</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4" id="stats-container">
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <h3 id="total-records">-</h3>
+                    <p>Total Records</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <h3 id="avg-sandstone">-</h3>
+                    <p>Avg Sandstone %</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <h3 id="avg-granite">-</h3>
+                    <p>Avg Granite %</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card text-center">
+                    <h3 id="avg-shale">-</h3>
+                    <p>Avg Shale %</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="search-section">
+            <h4><i class="fas fa-search"></i> Search & Filter</h4>
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Min Sandstone %</label>
+                    <input type="number" class="form-control" id="min-sandstone" step="0.01" min="0" max="1">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Max Sandstone %</label>
+                    <input type="number" class="form-control" id="max-sandstone" step="0.01" min="0" max="1">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Rockburst Class</label>
+                    <select class="form-select" id="rockburst-class">
+                        <option value="">All Classes</option>
+                        <option value="I">Class I</option>
+                        <option value="II">Class II</option>
+                        <option value="III">Class III</option>
+                        <option value="IV">Class IV</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary w-100" onclick="searchRecords()">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-chart-pie"></i> Geological Composition</h5>
+                        <div id="composition-chart" style="height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-chart-bar"></i> Rockburst Intensity Distribution</h5>
+                        <div id="rockburst-chart" style="height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mechanical Properties Chart -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-chart-line"></i> Mechanical Properties Analysis</h5>
+                        <div id="mechanical-chart" style="height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="table-container">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4><i class="fas fa-table"></i> Search Results</h4>
+                <button class="btn btn-success" onclick="exportData()">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+            </div>
+            <div id="results-container">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p>Loading data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let currentData = null;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboard();
+        });
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                // Update statistics
+                document.getElementById('total-records').textContent = data.total_records;
+                document.getElementById('avg-sandstone').textContent = (data.statistics.avg_sandstone * 100).toFixed(1) + '%';
+                document.getElementById('avg-granite').textContent = (data.statistics.avg_granite * 100).toFixed(1) + '%';
+                document.getElementById('avg-shale').textContent = (data.statistics.avg_shale * 100).toFixed(1) + '%';
+
+                // Load charts
+                loadCompositionChart();
+                loadRockburstChart();
+                loadMechanicalChart();
+
+                // Load initial results
+                searchRecords();
+
+            } catch (error) {
+                showError('Failed to load dashboard: ' + error.message);
+            }
+        }
+
+        // Load composition chart
+        async function loadCompositionChart() {
+            try {
+                const response = await fetch('/api/analysis/composition');
+                const data = await response.json();
+                
+                if (data.error) return;
+
+                const trace1 = {
+                    x: Array.from({length: data.sandstone.length}, (_, i) => i),
+                    y: data.sandstone,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Sandstone %',
+                    line: {color: '#667eea'}
+                };
+
+                const trace2 = {
+                    x: Array.from({length: data.granite.length}, (_, i) => i),
+                    y: data.granite,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Granite %',
+                    line: {color: '#764ba2'}
+                };
+
+                const trace3 = {
+                    x: Array.from({length: data.shale.length}, (_, i) => i),
+                    y: data.shale,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Shale %',
+                    line: {color: '#f093fb'}
+                };
+
+                const layout = {
+                    title: 'Geological Composition Distribution',
+                    xaxis: {title: 'Sample Index'},
+                    yaxis: {title: 'Percentage'},
+                    height: 300,
+                    margin: {l: 50, r: 50, t: 50, b: 50}
+                };
+
+                Plotly.newPlot('composition-chart', [trace1, trace2, trace3], layout);
+
+            } catch (error) {
+                console.error('Error loading composition chart:', error);
+            }
+        }
+
+        // Load rockburst chart
+        async function loadRockburstChart() {
+            try {
+                const response = await fetch('/api/analysis/rockburst');
+                const data = await response.json();
+                
+                if (data.error) return;
+
+                const trace = {
+                    x: Object.keys(data),
+                    y: Object.values(data),
+                    type: 'bar',
+                    marker: {
+                        color: ['#667eea', '#764ba2', '#f093fb', '#4facfe']
+                    }
+                };
+
+                const layout = {
+                    title: 'Rockburst Intensity Distribution',
+                    xaxis: {title: 'Rockburst Class'},
+                    yaxis: {title: 'Count'},
+                    height: 300,
+                    margin: {l: 50, r: 50, t: 50, b: 50}
+                };
+
+                Plotly.newPlot('rockburst-chart', [trace], layout);
+
+            } catch (error) {
+                console.error('Error loading rockburst chart:', error);
+            }
+        }
+
+        // Load mechanical properties chart
+        async function loadMechanicalChart() {
+            try {
+                const response = await fetch('/api/analysis/mechanical');
+                const data = await response.json();
+                
+                if (data.error) return;
+
+                const trace1 = {
+                    x: Array.from({length: data.compressive_strength.length}, (_, i) => i),
+                    y: data.compressive_strength,
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'Compressive Strength (MPa)',
+                    marker: {color: '#667eea', size: 8}
+                };
+
+                const trace2 = {
+                    x: Array.from({length: data.tensile_strength.length}, (_, i) => i),
+                    y: data.tensile_strength,
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'Tensile Strength (MPa)',
+                    marker: {color: '#764ba2', size: 8}
+                };
+
+                const trace3 = {
+                    x: Array.from({length: data.brittleness_ratio.length}, (_, i) => i),
+                    y: data.brittleness_ratio,
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'Brittleness Ratio',
+                    marker: {color: '#f093fb', size: 8},
+                    yaxis: 'y2'
+                };
+
+                const layout = {
+                    title: 'Mechanical Properties Analysis',
+                    xaxis: {title: 'Sample Index'},
+                    yaxis: {title: 'Strength (MPa)', side: 'left'},
+                    yaxis2: {title: 'Brittleness Ratio', side: 'right', overlaying: 'y'},
+                    height: 400,
+                    margin: {l: 50, r: 50, t: 50, b: 50}
+                };
+
+                Plotly.newPlot('mechanical-chart', [trace1, trace2, trace3], layout);
+
+            } catch (error) {
+                console.error('Error loading mechanical chart:', error);
+            }
+        }
+
+        // Search records
+        async function searchRecords() {
+            const minSandstone = document.getElementById('min-sandstone').value;
+            const maxSandstone = document.getElementById('max-sandstone').value;
+            const rockburstClass = document.getElementById('rockburst-class').value;
+
+            const params = new URLSearchParams();
+            if (minSandstone) params.append('min_sandstone', minSandstone);
+            if (maxSandstone) params.append('max_sandstone', maxSandstone);
+            if (rockburstClass) params.append('rockburst_class', rockburstClass);
+
+            try {
+                const response = await fetch(`/api/search?${params.toString()}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                displayResults(data.results, data.total_matches);
+
+            } catch (error) {
+                showError('Search failed: ' + error.message);
+            }
+        }
+
+        // Display search results
+        function displayResults(results, totalMatches) {
+            const container = document.getElementById('results-container');
+            
+            if (results.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted"><p>No results found</p></div>';
+                return;
+            }
+
+            let html = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Found ${totalMatches} matching records
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Sandstone %</th>
+                                <th>Granite %</th>
+                                <th>Shale %</th>
+                                <th>Fault Density</th>
+                                <th>Rockburst Class</th>
+                                <th>Compressive Strength (MPa)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            results.forEach(record => {
+                html += `
+                    <tr>
+                        <td>${record.event_id || record.event_index || 'N/A'}</td>
+                        <td>${(record.sandstone_ * 100).toFixed(1)}%</td>
+                        <td>${(record.granite_ * 100).toFixed(1)}%</td>
+                        <td>${(record.shale_ * 100).toFixed(1)}%</td>
+                        <td>${record.fault_density?.toFixed(4) || 'N/A'}</td>
+                        <td><span class="badge bg-primary">${record.rockburst_intensity || 'N/A'}</span></td>
+                        <td>${record.compressive_strength_MPa?.toFixed(1) || 'N/A'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewRecord(${record.event_index || record.event_id})">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // View individual record
+        async function viewRecord(recordId) {
+            try {
+                const response = await fetch(`/api/record/${recordId}`);
+                const record = await response.json();
+                
+                if (record.error) {
+                    showError(record.error);
+                    return;
+                }
+
+                // Create modal to show record details
+                const modalHtml = `
+                    <div class="modal fade" id="recordModal" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Record Details - ID: ${record.event_id || record.event_index}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Geological Composition</h6>
+                                            <p><strong>Sandstone:</strong> ${(record.sandstone_ * 100).toFixed(1)}%</p>
+                                            <p><strong>Granite:</strong> ${(record.granite_ * 100).toFixed(1)}%</p>
+                                            <p><strong>Shale:</strong> ${(record.shale_ * 100).toFixed(1)}%</p>
+                                            <p><strong>Fault Density:</strong> ${record.fault_density?.toFixed(4) || 'N/A'}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Mechanical Properties</h6>
+                                            <p><strong>Compressive Strength:</strong> ${record.compressive_strength_MPa?.toFixed(1) || 'N/A'} MPa</p>
+                                            <p><strong>Tensile Strength:</strong> ${record.tensile_strength_MPa?.toFixed(1) || 'N/A'} MPa</p>
+                                            <p><strong>Brittleness Ratio:</strong> ${record.brittleness_ratio?.toFixed(2) || 'N/A'}</p>
+                                            <p><strong>Rockburst Class:</strong> <span class="badge bg-primary">${record.rockburst_intensity || 'N/A'}</span></p>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <h6>Additional Data</h6>
+                                            <p><strong>Event Index:</strong> ${record.event_index || 'N/A'}</p>
+                                            <p><strong>Support Coverage:</strong> ${record.support_coverage?.toFixed(4) || 'N/A'}</p>
+                                            <p><strong>Elastic Strain Energy:</strong> ${record.elastic_strain_energy_kJ?.toFixed(2) || 'N/A'} kJ</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Remove existing modal if any
+                const existingModal = document.getElementById('recordModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+
+                // Add new modal to body
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('recordModal'));
+                modal.show();
+
+            } catch (error) {
+                showError('Failed to load record: ' + error.message);
+            }
+        }
+
+        // Export data
+        function exportData() {
+            const minSandstone = document.getElementById('min-sandstone').value;
+            const maxSandstone = document.getElementById('max-sandstone').value;
+            const rockburstClass = document.getElementById('rockburst-class').value;
+
+            const params = new URLSearchParams();
+            if (minSandstone) params.append('min_sandstone', minSandstone);
+            if (maxSandstone) params.append('max_sandstone', maxSandstone);
+            if (rockburstClass) params.append('rockburst_class', rockburstClass);
+
+            window.open(`/api/export?${params.toString()}`, '_blank');
+        }
+
+        // Show error message
+        function showError(message) {
+            const container = document.getElementById('results-container');
+            container.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i> ${message}</div>`;
+        }
+    </script>
+</body>
+</html>
