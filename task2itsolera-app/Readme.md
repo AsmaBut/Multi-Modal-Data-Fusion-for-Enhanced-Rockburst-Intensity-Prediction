@@ -1,6 +1,4 @@
-Sure! Here’s a full README draft for your **task2itsolera** project covering project description, structure, how to run, and other essentials — excluding the app’s README part since you already have that.
 
----
 
 # Multi-Modal Data Fusion for Enhanced Rockburst Intensity Prediction
 
@@ -14,7 +12,7 @@ The workflow includes data preprocessing, feature engineering, multi-modal fusio
 
 ## Project Structure
 
-``
+```
 Dataset/                         # Raw and source datasets
 ├── Geological Maps/             # Geological map files
 ├── Thermal Images/              # Thermal image files
@@ -56,7 +54,7 @@ model.py                      # Multi-modal fusion model implementation
 train.py                      # Model training script
 utils.py                      # Helper functions
 task2itsolera.ipynb            # Jupyter notebook for analysis and experiments
-``
+```
 
 ## Setup & Usage
 
