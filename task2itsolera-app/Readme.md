@@ -130,16 +130,3 @@ Feel free to fork the repository, make your changes, and submit pull requests. P
 
 ---
 
-## License
-
-This project is licensed under the MIT License.
-
----
-
-## Contact
-
-For questions or support, please open an issue or contact Asma Butt.
-
----
-
-Would you like me to help format a detailed **Model Explanation** or **Data Processing Workflow** section as well?
